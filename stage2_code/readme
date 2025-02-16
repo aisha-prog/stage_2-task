@@ -1,0 +1,173 @@
+# Write a function for translating DNA to protein
+def dna_to_protein(dna_seq):
+    # Step 1: Transcription (DNA → mRNA)
+    transcription = {"A": "U", "T": "A", "C": "G", "G": "C"}
+    mRNA_seq = "".join(transcription[nuc] for nuc in dna_seq)  
+
+    # Step 2: Translation (mRNA → Protein) - Full Codon Table
+    codon_table = {
+        "AUG": "M",  # Start codon (Methionine)
+        "UUU": "F", "UUC": "F",  # Phenylalanine
+        "UUA": "L", "UUG": "L", "CUU": "L", "CUC": "L", "CUA": "L", "CUG": "L",  # Leucine
+        "AUU": "I", "AUC": "I", "AUA": "I",  # Isoleucine
+        "GUU": "V", "GUC": "V", "GUA": "V", "GUG": "V",  # Valine
+        "UCU": "S", "UCC": "S", "UCA": "S", "UCG": "S",  # Serine
+        "CCU": "P", "CCC": "P", "CCA": "P", "CCG": "P",  # Proline
+        "ACU": "T", "ACC": "T", "ACA": "T", "ACG": "T",  # Threonine
+        "GCU": "A", "GCC": "A", "GCA": "A", "GCG": "A",  # Alanine
+        "UAU": "Y", "UAC": "Y",  # Tyrosine
+        "CAU": "H", "CAC": "H",  # Histidine
+        "CAA": "Q", "CAG": "Q",  # Glutamine
+        "AAU": "N", "AAC": "N",  # Asparagine
+        "AAA": "K", "AAG": "K",  # Lysine
+        "GAU": "D", "GAC": "D",  # Aspartic acid
+        "GAA": "E", "GAG": "E",  # Glutamic acid
+        "UGU": "C", "UGC": "C",  # Cysteine
+        "UGG": "W",  # Tryptophan
+        "CGU": "R", "CGC": "R", "CGA": "R", "CGG": "R", "AGA": "R", "AGG": "R",  # Arginine
+        "AGU": "S", "AGC": "S",  # Serine
+        "GGU": "G", "GGC": "G", "GGA": "G", "GGG": "G",  # Glycine
+        "UAA": "*", "UAG": "*", "UGA": "*",  # Stop codons
+    }
+
+    # Step 3: Translation
+    protein_seq = ""
+    for i in range(0, len(mRNA_seq) - 2, 3):  # Read codons (3 letters at a time)
+        codon = mRNA_seq[i:i+3]
+        if codon in ["UAA", "UAG", "UGA"]:  # Stop if stop codon
+            break
+        protein_seq += codon_table.get(codon, "?")  # Use '?' for unknown codons
+
+    return protein_seq
+
+# Write a function that simulates and generates a logistic population growth curve. Your function should include 2 extra parameters that randomize the length of the lag phase and the exponential phase 
+# Step 1: Define a function to simulate one logistic growth curve.
+def simulate_logistic_growth(L, k, t0, total_time, lag_offset, expo_offset, dt=1):
+    """
+    Simulates one logistic growth curve using the formula:
+         P(t) = L / (1 + e^(-k*(t - t0)))
+    with modifications:
+         - lag_offset is added to t0 to adjust the lag phase.
+         - expo_offset is added to k to adjust the exponential phase.
+    
+    Parameters:
+      L          : Maximum population (carrying capacity)
+      k          : Base growth rate
+      t0         : Base midpoint (time when population is half of L)
+      total_time : Total time for simulation
+      lag_offset : Value to add to t0 (modifies lag phase)
+      expo_offset: Value to add to k (modifies exponential phase)
+      dt         : Time step (default is 1)
+    
+    Returns:
+      A list of tuples (time, population) for the simulated growth curve.
+    """
+    # Adjust the parameters by adding the assigned offsets.
+    t0_mod = t0 + lag_offset
+    k_mod = k + expo_offset
+    e = 2.71828  # Approximate value of Euler's number.
+    
+    # Use a for loop to simulate from time = 0 to total_time (inclusive)
+    growth_curve = []
+    for t in range(0, total_time + 1, dt):
+        population = L / (1 + e ** (-k_mod * (t - t0_mod)))
+        growth_curve.append((t, population))
+    
+    return growth_curve
+
+# Step 2: Set base parameters for the logistic growth simulation.
+L = 100         # Carrying capacity (max population)
+base_k = 0.3    # Base growth rate
+base_t0 = 10    # Base midpoint (when population is L/2)
+total_time = 50 # Total simulation time
+dt = 1          # Time step
+
+# Step 3: Generate a "dataframe" with 100 different growth curves.
+dataframe = {}
+
+# Create a list of common time points.
+time_points = [t for t in range(0, total_time + 1)]
+dataframe["Time"] = time_points
+
+# Generate 100 growth curves.
+# Instead of randomizing, we assign values systematically:
+#   - lag_offset is assigned as (i % 10) * 0.5 (i.e. 0, 0.5, 1.0, ... 4.5)
+#   - expo_offset is assigned as (i // 10) * 0.05 (i.e. 0, 0.05, 0.10, ... 0.45)
+for i in range(100):
+    lag_offset = (i % 10) * 0.5
+    expo_offset = (i // 10) * 0.05
+    # Generate one logistic growth curve.
+    curve = simulate_logistic_growth(L, base_k, base_t0, total_time, lag_offset, expo_offset, dt)
+    # Extract the population values (time is common to all curves).
+    populations = [pop for (t, pop) in curve]
+    dataframe["Curve" + str(i + 1)] = populations
+
+# Write a function for determining the time to reach 80% of the maximum growth; usually the carrying capacity
+def time_to_reach_80(L, k, t0):
+    """
+    Determines the time to reach 80% of the carrying capacity in a logistic growth model.
+    
+    The logistic model is given by:
+        P(t) = L / (1 + e^(-k*(t - t0)))
+    
+    At 80% of L, the equation becomes:
+        0.8 = 1 / (1 + e^(-k*(t - t0)))
+    
+    Solving for t gives:
+        t = t0 + (ln(4)) / k
+    We approximate ln(4) as 1.38629 since we are not allowed to use libraries.
+    
+    Parameters:
+      L  : Carrying capacity (maximum population) -- included for context
+      k  : Growth rate of the logistic curve
+      t0 : The midpoint (time when the population is half of L)
+    
+    Returns:
+      The time at which the population reaches 80% of L.
+    """
+    ln4 = 1.38629  # Approximate value of ln(4)
+    t = t0 + ln4 / k
+    return t
+
+# Example usage:
+L = 100   # Carrying capacity (not used in calculation but part of the logistic model)
+k = 0.3   # Growth rate
+t0 = 10   # Midpoint when the population is L/2
+
+time_80 = time_to_reach_80(L, k, t0)
+print("Time to reach 80% of carrying capacity:", time_80)
+
+                   
+# write a function for calculating the hamming distance between your Slack username and twitter/X handle
+ def hamming_distance(s1, s2):
+    """
+    Calculates the Hamming distance between two strings.
+    The Hamming distance is the number of positions at which
+    the corresponding characters differ.
+    
+    Parameters:
+      s1 (str): First string (e.g., your Slack username)
+      s2 (str): Second string (e.g., your Twitter/X handle)
+      
+    Returns:
+      int: The Hamming distance if the strings are of equal length.
+      
+    """
+    if len(s1) != len(s2):
+        raise ValueError("Hamming distance is only defined for strings of equal length.")
+    
+    distance = 0
+    for i in range(len(s1)):
+        if s1[i] != s2[i]:
+            distance += 1
+    return distance
+
+# Example usage:
+# Ensure that both strings are of the same length.
+slack_username = "aishatlawal"   # 11 characters
+twitter_handle = "tokeadebola"   # 11 characters (for example)
+
+distance = hamming_distance(slack_username, twitter_handle)
+print("Hamming distance:", distance)
+
+                  
